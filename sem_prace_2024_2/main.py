@@ -7,7 +7,7 @@ OUTPUT_DIR = "out"
 DECODED_DIR = "decoded"
 KEY_FILEPATH = "key.txt"
 
-DEBUG = True
+DEBUG = False
 
 
 if __name__ == '__main__':
@@ -49,7 +49,10 @@ if __name__ == '__main__':
                 output_folder = OUTPUT_DIR
 
                 ##key genaration 64-bit length
-                # TODO call Des function to create a key and store it to the KEY_FILEPATH
+                key = des.create_key()
+                key_hex = format(key, '016x')
+                with open('key.txt', 'w') as file:
+                    file.write(key_hex)
 
             elif mode == "-d":
                 print("Decryption mode")
@@ -64,21 +67,25 @@ if __name__ == '__main__':
                 files = sorted(os.listdir(data_folder))
                 print(f"{len(files)} files found in {data_folder}")
                 for file in files:
+                    file_path = os.path.join(data_folder, file)
+                    with open(file_path, 'rb') as f:
+                        input_bytes = f.read()
 
-                    # TODO Load file and save its filename and extension
-                    input_bytes = None
+                    if des.encryption:
+                        filename, extension = os.path.splitext(file)
+                        output_filename = f"{filename}_{extension[1:]}.des"
+                    else:
+                        filename, extension = os.path.splitext(file)
+                        original_filename, original_extension = filename.rsplit('_', 1)
+                        output_filename = f"{original_filename}.{original_extension}"
 
-                    # TODO Load key
-                    key = None
+                    with open(KEY_FILEPATH, 'r') as key_file:
+                        key_hex = key_file.read().strip()
+                        key = int(key_hex, 16)
 
                     print(f"Processing file {file}")
                     output_bytes = des.perform_des(input_bytes=input_bytes, key=key)
 
-                    if des.encryption:
-                        # TODO build output_filename
-                        pass
-                    else:
-                        # TODO build original filename from the filename of .des file
-                        pass
-
-                    # TODO save output bytes to the proper file based on encryption or decryption
+                    output_path = os.path.join(output_folder, output_filename)
+                    with open(output_path, 'wb') as f:
+                        f.write(output_bytes)
