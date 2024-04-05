@@ -124,6 +124,9 @@ class Des:
     def __init__(self, encryption: bool = True):
         self.encryption = encryption
 
+    def __init__(self, encryption: bool = True):
+        self.encryption = encryption
+
     def create_key(self):
         key = random.getrandbits(64)
         return key
@@ -133,17 +136,32 @@ class Des:
         subkeys = self.generate_keys(key_bin)
         result = b''
 
-        for i in tqdm(range(0, len(input_bytes), self.BYTE_BLOCK_SIZE)):
-            block = input_bytes[i:i + self.BYTE_BLOCK_SIZE]
-            if len(block) < self.BYTE_BLOCK_SIZE:
-                block = self.pad_data(block)
+        assert len(input_bytes) > 0, "Input bytes should not be empty"
+
+        if self.encryption:
+            # Pad the input bytes before processing blocks for encryption
+            padded_input_bytes = self.pad_data(input_bytes)
+        else:
+            # No padding needed for decryption
+            padded_input_bytes = input_bytes
+
+        for i in tqdm(range(0, len(padded_input_bytes), self.BYTE_BLOCK_SIZE)):
+            block = padded_input_bytes[i:i + self.BYTE_BLOCK_SIZE]
             if self.encryption:
-                result += self.des_encrypt_block(block, subkeys)
+                encrypted_block = self.des_encrypt_block(block, subkeys)
+                assert len(
+                    encrypted_block) == self.BYTE_BLOCK_SIZE, "Encrypted block size should be equal to BYTE_BLOCK_SIZE"
+                result += encrypted_block
             else:
-                result += self.des_decrypt_block(block, subkeys)
+                decrypted_block = self.des_decrypt_block(block, subkeys)
+                assert len(
+                    decrypted_block) == self.BYTE_BLOCK_SIZE, "Decrypted block size should be equal to BYTE_BLOCK_SIZE"
+                result += decrypted_block
 
         if not self.encryption:
+            # Remove padding after decryption
             result = self.unpad_data(result)
+            assert len(result) > 0, "Decrypted result should not be empty"
 
         return result
 
@@ -190,12 +208,18 @@ class Des:
         return subkeys
 
     def pad_data(self, data):
-        padding_length = self.BYTE_BLOCK_SIZE - len(data)
+        padding_length = self.BYTE_BLOCK_SIZE - len(data) % self.BYTE_BLOCK_SIZE
+        if padding_length == 0:
+            padding_length = self.BYTE_BLOCK_SIZE
         padding = bytes([padding_length] * padding_length)
         return data + padding
 
     def unpad_data(self, data):
         padding_length = data[-1]
+        if padding_length < 1 or padding_length > self.BYTE_BLOCK_SIZE:
+            return data
+        if data[-padding_length:] != bytes([padding_length] * padding_length):
+            return data
         return data[:-padding_length]
 
     def bytes_to_bin(self, bytes_):
