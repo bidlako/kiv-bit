@@ -32,13 +32,13 @@ class Knapsack:
         return [(num * self.r) % self.q for num in self.private_key]
 
     def save_parameters(self):
-        with open("p.txt", "w") as file:
+        with open("../p.txt", "w") as file:
             file.write(str(self.r))
-        with open("q.txt", "w") as file:
+        with open("../q.txt", "w") as file:
             file.write(str(self.q))
-        with open("private_key.txt", "w") as file:
+        with open("../private_key.txt", "w") as file:
             file.write(",".join(map(str, self.private_key)))
-        with open("public_key.txt", "w") as file:
+        with open("../public_key.txt", "w") as file:
             file.write(",".join(map(str, self.public_key)))
 
     def encrypt(self, message):
@@ -59,10 +59,6 @@ class Knapsack:
             else:
                 binary_message = '0' + binary_message
 
-        # Remove leading zeros from the binary message
-        binary_message = binary_message.lstrip('0')
-
-        # Pad the binary message to a multiple of 8 bits
         padding_size = (8 - len(binary_message) % 8) % 8
         binary_message = binary_message.zfill(len(binary_message) + padding_size)
 
